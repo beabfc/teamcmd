@@ -3,7 +3,7 @@
 This mod adds a new command to Minecraft which allows players to create and manage their own teams. The command is based
 on the Vanilla `/team` command but can be used by every player to manage only their team.
 
-![https://i.ibb.co/HdxZjC3/players.png]()
+![Players in different teams](https://i.ibb.co/HdxZjC3/players.png)
 
 - `/t create <name> <color>` Create a new team and be its first member.
 - `/t list [<team>]` Lists all teams or the players in a specific team.

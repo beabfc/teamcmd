@@ -208,7 +208,7 @@ public class CommandBuilder {
             .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/t accept"))
             .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("/t accept")))
             .withInsertion("/t accept"));
-        
+
 
         newPlayer.sendSystemMessage(inviteText, Util.NIL_UUID);
         return 0;
