@@ -1,0 +1,14 @@
+{
+  "commands.teamcmd.fail.in_team": "Du bist bereits in einem Team",
+  "commands.teamcmd.fail.no_team": "Du bist in keinem Team",
+  "commands.teamcmd.fail.already_teammate": "Dieser Spieler ist bereits in deinem Team",
+  "commands.teamcmd.fail.not_invited": "Du bist in kein Team eingeladen",
+  "commands.teamcmd.invite.success": "%s wurde in dein Team eingeladen",
+  "commands.teamcmd.invite": "%s hat dich eingeladen dem Team %s beizutreten",
+  "commands.teamcmd.teammates.invite": "%s hat %s in dein Team eingeladen",
+  "commands.teamcmd.joined": "Due bist dem Team %s beigetreten",
+  "commands.teamcmd.teammates.joined": "%s ist deinem Team beigetreten",
+  "commands.teamcmd.left": "Du hast das Team %s verlassen",
+  "commands.teamcmd.teammates.left": "%s hat dein team verlassen",
+  "commands.teamcmd.invite_expired": "Deine Einladung dem Team %s beizutreten ist ausgelaufen"
+}
