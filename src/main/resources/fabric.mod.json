@@ -4,7 +4,7 @@
   "version": "${version}",
 
   "name": "TeamCommand",
-  "description": "A commmand for players to create and manage teams. Based on Vanilla Scoreboard Teams.",
+  "description": "A command for players to create and manage teams. Similar to factions but based on Vanilla scoreboard teams.",
   "authors": [
     "beabfc"
   ],
