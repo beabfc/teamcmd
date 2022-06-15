@@ -27,5 +27,5 @@ Configuration options to tune the mod to your needs are planned and will be avai
 
 ## Limitations
 
-- There is no hierachy in teams, everybody can invite new members.
+- There is no hierarchy in teams, everybody can invite new members.
 - It's not possible to change the actual name of a team, only the displayed name.
