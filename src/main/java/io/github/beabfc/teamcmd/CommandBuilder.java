@@ -8,6 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.ColorArgumentType;
+
+import static net.minecraft.server.command.CommandManager.argument;
+import static net.minecraft.server.command.CommandManager.literal;
+
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.TeamArgumentType;
 import net.minecraft.scoreboard.Scoreboard;
@@ -51,55 +55,32 @@ public class CommandBuilder {
         new DynamicCommandExceptionType(option -> new TranslatableText("team.notFound", option));
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        LiteralArgumentBuilder<ServerCommandSource> teamCmd = CommandManager.literal("t");
-        teamCmd.then(CommandManager
-                .literal("create")
-                .then(CommandManager
-                    .argument("name", StringArgumentType.word())
-                    .then(CommandManager
-                        .argument("color", ColorArgumentType.color())
-                        .executes(ctx -> executeCreate(ctx.getSource(), StringArgumentType.getString(ctx, "name"),
-                            ColorArgumentType.getColor(ctx, "color"))))))
-            .then(CommandManager
-                .literal("list")
+        LiteralArgumentBuilder<ServerCommandSource> teamCmd = literal("t");
+        teamCmd
+            .then(literal("create").then(argument("name", StringArgumentType.word()).then(argument("color",
+                ColorArgumentType.color()).executes(ctx -> executeCreate(ctx.getSource(),
+                StringArgumentType.getString(ctx, "name"), ColorArgumentType.getColor(ctx, "color"))))))
+            .then(literal("list")
                 .executes(ctx -> executeListTeams(ctx.getSource()))
-                .then(CommandManager
-                    .argument("team", TeamArgumentType.team())
-                    .executes(ctx -> executeListMembers(ctx.getSource(), TeamArgumentType.getTeam(ctx, "team")))))
-            .then(CommandManager.literal("leave").executes(ctx -> executeLeave(ctx.getSource())))
-            .then(CommandManager
-                .literal("invite")
-                .then(CommandManager
-                    .argument("player", EntityArgumentType.player())
-                    .executes(ctx -> executeInvitePlayer(ctx.getSource(),
-                        EntityArgumentType.getPlayer(ctx, "player")))))
-            .then(CommandManager.literal("accept").executes(ctx -> executeAcceptInvite(ctx.getSource())));
+                .then(argument("team", TeamArgumentType.team()).executes(ctx -> executeListMembers(ctx.getSource(),
+                    TeamArgumentType.getTeam(ctx, "team")))))
+            .then(literal("leave").executes(ctx -> executeLeave(ctx.getSource())))
+            .then(literal("invite").then(argument("player", EntityArgumentType.player())
+                .executes(ctx -> executeInvitePlayer(ctx.getSource(), EntityArgumentType.getPlayer(ctx, "player")))))
+            .then(literal("accept").executes(ctx -> executeAcceptInvite(ctx.getSource())));
 
-        LiteralArgumentBuilder<ServerCommandSource> setCommand = CommandManager.literal("set")
-            .then(CommandManager
-                .literal("color")
-                .then(CommandManager
-                    .argument("color", ColorArgumentType.color())
-                    .executes(ctx -> executeSetColor(ctx.getSource(), ColorArgumentType.getColor(ctx, "color")))))
-            .then(CommandManager
-                .literal("friendlyFire")
-                .then(CommandManager
-                    .argument("allowed", BoolArgumentType.bool())
-                    .executes(ctx -> executeSetFriendlyFire(ctx.getSource(),
-                        BoolArgumentType.getBool(ctx, "allowed")))))
+        LiteralArgumentBuilder<ServerCommandSource> setCommand = literal("set")
+            .then(literal("color").then(argument("color", ColorArgumentType.color())
+                .executes(ctx -> executeSetColor(ctx.getSource(), ColorArgumentType.getColor(ctx, "color")))))
+            .then(literal("friendlyFire").then(argument("allowed", BoolArgumentType.bool())
+                .executes(ctx -> executeSetFriendlyFire(ctx.getSource(), BoolArgumentType.getBool(ctx, "allowed")))))
 
-            .then(CommandManager
-                .literal("seeInvisibles")
-                .then(CommandManager
-                    .argument("allowed", BoolArgumentType.bool())
-                    .executes(ctx -> executeSetShowFriendlyInvisibles(ctx.getSource(), BoolArgumentType.getBool(ctx,
-                        "allowed")))))
-            .then(CommandManager
-                .literal("displayName")
-                .then(CommandManager
-                    .argument("displayName", StringArgumentType.word())
-                    .executes(ctx -> executeSetDisplayName(ctx.getSource(), StringArgumentType.getString(ctx,
-                        "displayName")))));
+            .then(literal("seeInvisibles").then(argument("allowed", BoolArgumentType.bool())
+                .executes(ctx -> executeSetShowFriendlyInvisibles(ctx.getSource(), BoolArgumentType.getBool(ctx,
+                    "allowed")))))
+            .then(literal("displayName").then(argument("displayName", StringArgumentType.word())
+                .executes(ctx -> executeSetDisplayName(ctx.getSource(), StringArgumentType.getString(ctx,
+                    "displayName")))));
 
         teamCmd.then(setCommand);
         dispatcher.register(teamCmd);
@@ -203,11 +184,13 @@ public class CommandBuilder {
             player.getDisplayName(), newPlayer.getDisplayName()));
         source.sendFeedback(new TranslatableText("commands.teamcmd.invite.success", newPlayer.getDisplayName()), false);
 
-        Text inviteText = new TranslatableText("commands.teamcmd.invite", player.getDisplayName(),
-            team.getFormattedName()).formatted(Formatting.GRAY).styled((style) -> style
-            .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/t accept"))
-            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("/t accept")))
-            .withInsertion("/t accept"));
+        Text inviteText =
+            new TranslatableText("commands.teamcmd.invite", player.getDisplayName(), team.getFormattedName())
+                .formatted(Formatting.GRAY)
+                .styled((style) -> style
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/t accept"))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("/t accept")))
+                    .withInsertion("/t accept"));
 
 
         newPlayer.sendSystemMessage(inviteText, Util.NIL_UUID);
