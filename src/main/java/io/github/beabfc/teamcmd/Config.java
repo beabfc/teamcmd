@@ -12,9 +12,9 @@ public class Config {
     public boolean allowDuplicateColors = true;
     public boolean allowDuplicateDisplaynames = false;
     public String prefixFormat = "[%.1s] ";
-    public boolean prefixUseTeamColor = true;
+    public boolean prefixUseTeamColor = false;
     public String suffixFormat = "";
-    public boolean suffixUseTeamColor = true;
+    public boolean suffixUseTeamColor = false;
 
 
     public static Config load(String configName) {
