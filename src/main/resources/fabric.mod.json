@@ -23,7 +23,6 @@
     ]
   },
   "mixins": [
-    "teamcmd.mixins.json"
   ],
 
   "depends": {
