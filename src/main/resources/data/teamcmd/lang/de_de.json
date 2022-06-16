@@ -10,5 +10,6 @@
   "commands.teamcmd.teammates.joined": "%s ist deinem Team beigetreten",
   "commands.teamcmd.left": "Du hast das Team %s verlassen",
   "commands.teamcmd.teammates.left": "%s hat dein team verlassen",
-  "commands.teamcmd.invite_expired": "Deine Einladung dem Team %s beizutreten ist ausgelaufen"
+  "commands.teamcmd.invite_expired": "Deine Einladung dem Team %s beizutreten ist ausgelaufen",
+  "commands.teamcmd.fail.duplicate_color": "Ein Team mit dieser Farbe existiert bereits"
 }

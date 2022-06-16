@@ -16,7 +16,6 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.TeamArgumentType;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.*;
@@ -27,17 +26,17 @@ import java.util.Collection;
 
 
 public class CommandBuilder {
-    private static final SimpleCommandExceptionType ADD_DUPLICATE_EXCEPTION =
+    private static final SimpleCommandExceptionType DUPLICATE_NAME =
         new SimpleCommandExceptionType(new TranslatableText("commands.team.add.duplicate"));
-    private static final SimpleCommandExceptionType OPTION_NAME_UNCHANGED_EXCEPTION =
+    private static final SimpleCommandExceptionType NAME_UNCHANGED =
         new SimpleCommandExceptionType(new TranslatableText("commands.team.option.name.unchanged"));
-    private static final SimpleCommandExceptionType OPTION_COLOR_UNCHANGED_EXCEPTION =
+    private static final SimpleCommandExceptionType COLOR_UNCHANGED =
         new SimpleCommandExceptionType(new TranslatableText("commands.team.option.color.unchanged"));
-    private static final SimpleCommandExceptionType OPTION_FRIENDLY_FIRE_ALREADY_ENABLED_EXCEPTION =
+    private static final SimpleCommandExceptionType FRIENDLY_FIRE_ALREADY_ENABLED =
         new SimpleCommandExceptionType(new TranslatableText("commands.team.option.friendlyfire.alreadyEnabled"));
-    private static final SimpleCommandExceptionType OPTION_FRIENDLY_FIRE_ALREADY_DISABLED_EXCEPTION =
+    private static final SimpleCommandExceptionType FRIENDLY_FIRE_ALREADY_DISABLED =
         new SimpleCommandExceptionType(new TranslatableText("commands.team.option.friendlyfire.alreadyDisabled"));
-    private static final SimpleCommandExceptionType OPTION_SEE_FRIENDLY_INVISIBLES_ALREADY_ENABLED_EXCEPTION =
+    private static final SimpleCommandExceptionType FRIENDLY_INVISIBLES_ALREADY_ENABLED =
         new SimpleCommandExceptionType(new TranslatableText("commands.team.option.seeFriendlyInvisibles" +
             ".alreadyEnabled"));
     private static final SimpleCommandExceptionType OPTION_SEE_FRIENDLY_INVISIBLES_ALREADY_DISABLED_EXCEPTION =
@@ -47,15 +46,17 @@ public class CommandBuilder {
         new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.in_team"));
     private static final SimpleCommandExceptionType NOT_IN_TEAM =
         new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.no_team"));
-    private static final SimpleCommandExceptionType INVITED_TEAMMATE =
+    private static final SimpleCommandExceptionType PLAYER_ALREADY_TEAMMATE =
         new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.already_teammate"));
     private static final SimpleCommandExceptionType NOT_INVITED =
         new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.not_invited"));
+    private static final SimpleCommandExceptionType DUPLICATE_COLOR =
+        new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.duplicate_color"));
     private static final DynamicCommandExceptionType TEAM_NOT_FOUND =
         new DynamicCommandExceptionType(option -> new TranslatableText("team.notFound", option));
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        LiteralArgumentBuilder<ServerCommandSource> teamCmd = literal("t");
+        LiteralArgumentBuilder<ServerCommandSource> teamCmd = literal(TeamCommand.CONFIG.commandName);
         teamCmd
             .then(literal("create").then(argument("name", StringArgumentType.word()).then(argument("color",
                 ColorArgumentType.color()).executes(ctx -> executeCreate(ctx.getSource(),
@@ -65,59 +66,61 @@ public class CommandBuilder {
                 .then(argument("team", TeamArgumentType.team()).executes(ctx -> executeListMembers(ctx.getSource(),
                     TeamArgumentType.getTeam(ctx, "team")))))
             .then(literal("leave").executes(ctx -> executeLeave(ctx.getSource())))
-            .then(literal("invite").then(argument("player", EntityArgumentType.player())
-                .executes(ctx -> executeInvitePlayer(ctx.getSource(), EntityArgumentType.getPlayer(ctx, "player")))))
+            .then(literal("invite").then(argument("player", EntityArgumentType.player()).executes(ctx -> executeInvitePlayer(ctx.getSource(), EntityArgumentType.getPlayer(ctx, "player")))))
             .then(literal("accept").executes(ctx -> executeAcceptInvite(ctx.getSource())));
 
         LiteralArgumentBuilder<ServerCommandSource> setCommand = literal("set")
-            .then(literal("color").then(argument("color", ColorArgumentType.color())
-                .executes(ctx -> executeSetColor(ctx.getSource(), ColorArgumentType.getColor(ctx, "color")))))
-            .then(literal("friendlyFire").then(argument("allowed", BoolArgumentType.bool())
-                .executes(ctx -> executeSetFriendlyFire(ctx.getSource(), BoolArgumentType.getBool(ctx, "allowed")))))
+            .then(literal("color").then(argument("color", ColorArgumentType.color()).executes(ctx -> executeSetColor(ctx.getSource(), ColorArgumentType.getColor(ctx, "color")))))
+            .then(literal("friendlyFire").then(argument("allowed", BoolArgumentType.bool()).executes(ctx -> executeSetFriendlyFire(ctx.getSource(), BoolArgumentType.getBool(ctx, "allowed")))))
 
-            .then(literal("seeInvisibles").then(argument("allowed", BoolArgumentType.bool())
-                .executes(ctx -> executeSetShowFriendlyInvisibles(ctx.getSource(), BoolArgumentType.getBool(ctx,
-                    "allowed")))))
-            .then(literal("displayName").then(argument("displayName", StringArgumentType.word())
-                .executes(ctx -> executeSetDisplayName(ctx.getSource(), StringArgumentType.getString(ctx,
-                    "displayName")))));
+            .then(literal("seeInvisibles").then(argument("allowed", BoolArgumentType.bool()).executes(ctx -> executeSetShowFriendlyInvisibles(ctx.getSource(), BoolArgumentType.getBool(ctx, "allowed")))))
+            .then(literal("displayName").then(argument("displayName", StringArgumentType.word()).executes(ctx -> executeSetDisplayName(ctx.getSource(), StringArgumentType.getString(ctx, "displayName")))));
 
         teamCmd.then(setCommand);
         dispatcher.register(teamCmd);
-
     }
 
-    private static int executeCreate(ServerCommandSource source, String name, Formatting color) throws CommandSyntaxException {
+    private static int executeCreate(ServerCommandSource source, String displayName, Formatting color) throws CommandSyntaxException {
         ServerPlayerEntity player = source.getPlayer();
-        String teamName = name.toLowerCase();
+        String name = displayName.toLowerCase();
         Scoreboard scoreboard = source.getServer().getScoreboard();
+
+        if (color == Formatting.RESET) color = Formatting.WHITE;
         if (player.getScoreboardTeam() != null) {
             throw ALREADY_IN_TEAM.create();
-        } else if (scoreboard.getTeam(teamName) != null) {
-            throw ADD_DUPLICATE_EXCEPTION.create();
-        } else {
-            Team newTeam = scoreboard.addTeam(teamName);
-            newTeam.setDisplayName(new LiteralText(name));
-            scoreboard.addPlayerToTeam(player.getEntityName(), newTeam);
-            newTeam.setColor(color);
-            setPrefix(newTeam);
-            source.sendFeedback(new TranslatableText("commands.team.add.success", newTeam.getFormattedName()), false);
-            return 1;
+        } else if (scoreboard.getTeam(name) != null || duplicateName(scoreboard.getTeams(), name)) {
+            throw DUPLICATE_NAME.create();
+        } else if (duplicateColor(scoreboard.getTeams(), color)) {
+            throw DUPLICATE_COLOR.create();
         }
+        Team newTeam = scoreboard.addTeam(name);
+        newTeam.setDisplayName(new LiteralText(displayName));
+        scoreboard.addPlayerToTeam(player.getEntityName(), newTeam);
+        newTeam.setColor(color);
+        setPrefix(newTeam);
+        setSuffix(newTeam);
+        source.sendFeedback(new TranslatableText("commands.team.add.success", newTeam.getFormattedName()), false);
+        return 1;
 
     }
 
     private static int executeSetDisplayName(ServerCommandSource source, String displayName) throws CommandSyntaxException {
         ServerPlayerEntity player = source.getPlayer();
         Team team = (Team) player.getScoreboardTeam();
+        Scoreboard scoreboard = source.getServer().getScoreboard();
+
         if (team == null) {
             throw NOT_IN_TEAM.create();
         } else if (team.getDisplayName().getString().equals(displayName)) {
-            throw OPTION_NAME_UNCHANGED_EXCEPTION.create();
+            throw NAME_UNCHANGED.create();
+        } else if (duplicateName(scoreboard.getTeams(), displayName)) {
+            throw DUPLICATE_NAME.create();
         }
 
         team.setDisplayName(new LiteralText(displayName));
         setPrefix(team);
+        setSuffix(team);
+
 
         source.sendFeedback(new TranslatableText("commands.team.option.name.success", team.getFormattedName()), false);
         return 0;
@@ -126,14 +129,20 @@ public class CommandBuilder {
     private static int executeSetColor(ServerCommandSource source, Formatting color) throws CommandSyntaxException {
         ServerPlayerEntity player = source.getPlayer();
         Team team = (Team) player.getScoreboardTeam();
+        Scoreboard scoreboard = source.getServer().getScoreboard();
+
+        if (color == Formatting.RESET) color = Formatting.WHITE;
         if (team == null) {
             throw NOT_IN_TEAM.create();
         } else if (team.getColor().equals(color)) {
-            throw OPTION_COLOR_UNCHANGED_EXCEPTION.create();
+            throw COLOR_UNCHANGED.create();
+        } else if (duplicateColor(scoreboard.getTeams(), color)) {
+            throw DUPLICATE_COLOR.create();
         }
 
         team.setColor(color);
         setPrefix(team);
+        setSuffix(team);
 
         source.sendFeedback(new TranslatableText("commands.team.option.color.success", team.getFormattedName(),
             color.getName()), false);
@@ -146,8 +155,8 @@ public class CommandBuilder {
         if (team == null) {
             throw NOT_IN_TEAM.create();
         } else if (team.isFriendlyFireAllowed() == allowed) {
-            throw allowed ? OPTION_FRIENDLY_FIRE_ALREADY_ENABLED_EXCEPTION.create() :
-                OPTION_FRIENDLY_FIRE_ALREADY_DISABLED_EXCEPTION.create();
+            throw allowed ? FRIENDLY_FIRE_ALREADY_ENABLED.create() :
+                FRIENDLY_FIRE_ALREADY_DISABLED.create();
         }
         team.setFriendlyFireAllowed(allowed);
         source.sendFeedback(new TranslatableText("commands.team.option.friendlyfire." + (allowed ? "enabled" :
@@ -161,7 +170,7 @@ public class CommandBuilder {
         if (team == null) {
             throw NOT_IN_TEAM.create();
         } else if (team.shouldShowFriendlyInvisibles() == allowed) {
-            throw allowed ? OPTION_SEE_FRIENDLY_INVISIBLES_ALREADY_ENABLED_EXCEPTION.create() :
+            throw allowed ? FRIENDLY_INVISIBLES_ALREADY_ENABLED.create() :
                 OPTION_SEE_FRIENDLY_INVISIBLES_ALREADY_DISABLED_EXCEPTION.create();
         }
         team.setShowFriendlyInvisibles(allowed);
@@ -176,7 +185,7 @@ public class CommandBuilder {
         if (team == null) {
             throw NOT_IN_TEAM.create();
         } else if (newPlayer.isTeammate(player)) {
-            throw INVITED_TEAMMATE.create();
+            throw PLAYER_ALREADY_TEAMMATE.create();
         }
 
         TeamUtil.addInvite(newPlayer, team.getName());
@@ -259,31 +268,54 @@ public class CommandBuilder {
         return collection.size();
     }
 
+    private static boolean duplicateName(Collection<Team> teams, String name) {
+        return !TeamCommand.CONFIG.allowDuplicateDisplaynames && teams.stream().anyMatch(other -> other
+            .getDisplayName()
+            .getString()
+            .equalsIgnoreCase(name));
+    }
+
+    private static boolean duplicateColor(Collection<Team> teams, Formatting color) {
+        return !TeamCommand.CONFIG.allowDuplicateColors && teams.stream().anyMatch(other -> other
+            .getColor()
+            .equals(color));
+    }
+
+
     private static void setPrefix(Team team) {
         Formatting teamColor = team.getColor();
-        Formatting color;
-        switch (teamColor) {
-            case AQUA -> color = Formatting.DARK_AQUA;
-            case DARK_AQUA -> color = Formatting.AQUA;
-            case BLUE -> color = Formatting.DARK_BLUE;
-            case DARK_BLUE -> color = Formatting.BLUE;
-            case WHITE -> color = Formatting.GRAY;
-            case GRAY -> color = Formatting.WHITE;
-            case DARK_GRAY -> color = Formatting.BLACK;
-            case BLACK -> color = Formatting.DARK_GRAY;
-            case RED -> color = Formatting.DARK_RED;
-            case DARK_RED -> color = Formatting.RED;
-            case GREEN -> color = Formatting.DARK_GREEN;
-            case DARK_GREEN -> color = Formatting.GREEN;
-            case LIGHT_PURPLE -> color = Formatting.DARK_PURPLE;
-            case DARK_PURPLE -> color = Formatting.LIGHT_PURPLE;
-            case YELLOW -> color = Formatting.GOLD;
-            case GOLD -> color = Formatting.YELLOW;
-            default -> {
-                team.setColor(Formatting.WHITE);
-                color = Formatting.GRAY;
-            }
+        team.setPrefix(
+            new LiteralText(String.format(TeamCommand.CONFIG.prefixFormat, team.getDisplayName().getString()))
+                .formatted(TeamCommand.CONFIG.prefixSecondaryColor ? getSecondaryColor(teamColor) : teamColor));
+    }
+
+    private static void setSuffix(Team team) {
+        Formatting teamColor = team.getColor();
+        team.setSuffix(
+            new LiteralText(String.format(TeamCommand.CONFIG.suffixFormat, team.getDisplayName().getString()))
+                .formatted(TeamCommand.CONFIG.suffixSecondaryColor ? getSecondaryColor(teamColor) : teamColor));
+    }
+
+    private static Formatting getSecondaryColor(Formatting primary) {
+        Formatting secondary = Formatting.RESET;
+        switch (primary) {
+            case AQUA -> secondary = Formatting.DARK_AQUA;
+            case DARK_AQUA -> secondary = Formatting.AQUA;
+            case BLUE -> secondary = Formatting.DARK_BLUE;
+            case DARK_BLUE -> secondary = Formatting.BLUE;
+            case WHITE -> secondary = Formatting.GRAY;
+            case GRAY -> secondary = Formatting.WHITE;
+            case DARK_GRAY -> secondary = Formatting.BLACK;
+            case BLACK -> secondary = Formatting.DARK_GRAY;
+            case RED -> secondary = Formatting.DARK_RED;
+            case DARK_RED -> secondary = Formatting.RED;
+            case GREEN -> secondary = Formatting.DARK_GREEN;
+            case DARK_GREEN -> secondary = Formatting.GREEN;
+            case LIGHT_PURPLE -> secondary = Formatting.DARK_PURPLE;
+            case DARK_PURPLE -> secondary = Formatting.LIGHT_PURPLE;
+            case YELLOW -> secondary = Formatting.GOLD;
+            case GOLD -> secondary = Formatting.YELLOW;
         }
-        team.setPrefix(new LiteralText("[" + team.getDisplayName().getString().charAt(0) + "] ").formatted(color));
+        return secondary;
     }
 }

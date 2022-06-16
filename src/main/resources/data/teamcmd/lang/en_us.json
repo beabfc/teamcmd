@@ -10,6 +10,6 @@
   "commands.teamcmd.teammates.joined": "%s joined your team",
   "commands.teamcmd.left": "You left the team %s",
   "commands.teamcmd.teammates.left": "%s left your team",
-  "commands.teamcmd.invite_expired": "Your invite to join the team %s has expired"
-
+  "commands.teamcmd.invite_expired": "Your invite to join the team %s has expired",
+  "commands.teamcmd.fail.duplicate_color": "A team with this color already exists"
 }
