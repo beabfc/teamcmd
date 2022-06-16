@@ -286,14 +286,14 @@ public class CommandBuilder {
         Formatting teamColor = team.getColor();
         team.setPrefix(
             new LiteralText(String.format(TeamCommand.CONFIG.prefixFormat, team.getDisplayName().getString()))
-                .formatted(TeamCommand.CONFIG.prefixSecondaryColor ? getSecondaryColor(teamColor) : teamColor));
+                .formatted(TeamCommand.CONFIG.prefixUseTeamColor ? teamColor : getSecondaryColor(teamColor)));
     }
 
     private static void setSuffix(Team team) {
         Formatting teamColor = team.getColor();
         team.setSuffix(
             new LiteralText(String.format(TeamCommand.CONFIG.suffixFormat, team.getDisplayName().getString()))
-                .formatted(TeamCommand.CONFIG.suffixSecondaryColor ? getSecondaryColor(teamColor) : teamColor));
+                .formatted(TeamCommand.CONFIG.suffixUseTeamColor ? teamColor : getSecondaryColor(teamColor)));
     }
 
     private static Formatting getSecondaryColor(Formatting primary) {
