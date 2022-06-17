@@ -20,40 +20,39 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
 
 import java.util.Collection;
 
 
 public class CommandBuilder {
     private static final SimpleCommandExceptionType DUPLICATE_NAME =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.add.duplicate"));
+        new SimpleCommandExceptionType(Text.translatable("commands.team.add.duplicate"));
     private static final SimpleCommandExceptionType NAME_UNCHANGED =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.option.name.unchanged"));
+        new SimpleCommandExceptionType(Text.translatable("commands.team.option.name.unchanged"));
     private static final SimpleCommandExceptionType COLOR_UNCHANGED =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.option.color.unchanged"));
+        new SimpleCommandExceptionType(Text.translatable("commands.team.option.color.unchanged"));
     private static final SimpleCommandExceptionType FRIENDLY_FIRE_ALREADY_ENABLED =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.option.friendlyfire.alreadyEnabled"));
+        new SimpleCommandExceptionType(Text.translatable("commands.team.option.friendlyfire.alreadyEnabled"));
     private static final SimpleCommandExceptionType FRIENDLY_FIRE_ALREADY_DISABLED =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.option.friendlyfire.alreadyDisabled"));
+        new SimpleCommandExceptionType(Text.translatable("commands.team.option.friendlyfire.alreadyDisabled"));
     private static final SimpleCommandExceptionType FRIENDLY_INVISIBLES_ALREADY_ENABLED =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.option.seeFriendlyInvisibles" +
+        new SimpleCommandExceptionType(Text.translatable("commands.team.option.seeFriendlyInvisibles" +
             ".alreadyEnabled"));
     private static final SimpleCommandExceptionType OPTION_SEE_FRIENDLY_INVISIBLES_ALREADY_DISABLED_EXCEPTION =
-        new SimpleCommandExceptionType(new TranslatableText("commands.team.option.seeFriendlyInvisibles" +
+        new SimpleCommandExceptionType(Text.translatable("commands.team.option.seeFriendlyInvisibles" +
             ".alreadyDisabled"));
     private static final SimpleCommandExceptionType ALREADY_IN_TEAM =
-        new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.in_team"));
+        new SimpleCommandExceptionType(Text.translatable("commands.teamcmd.fail.in_team"));
     private static final SimpleCommandExceptionType NOT_IN_TEAM =
-        new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.no_team"));
+        new SimpleCommandExceptionType(Text.translatable("commands.teamcmd.fail.no_team"));
     private static final SimpleCommandExceptionType PLAYER_ALREADY_TEAMMATE =
-        new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.already_teammate"));
+        new SimpleCommandExceptionType(Text.translatable("commands.teamcmd.fail.already_teammate"));
     private static final SimpleCommandExceptionType NOT_INVITED =
-        new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.not_invited"));
+        new SimpleCommandExceptionType(Text.translatable("commands.teamcmd.fail.not_invited"));
     private static final SimpleCommandExceptionType DUPLICATE_COLOR =
-        new SimpleCommandExceptionType(new TranslatableText("commands.teamcmd.fail.duplicate_color"));
+        new SimpleCommandExceptionType(Text.translatable("commands.teamcmd.fail.duplicate_color"));
     private static final DynamicCommandExceptionType TEAM_NOT_FOUND =
-        new DynamicCommandExceptionType(option -> new TranslatableText("team.notFound", option));
+        new DynamicCommandExceptionType(option -> Text.translatable("team.notFound", option));
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         LiteralArgumentBuilder<ServerCommandSource> teamCmd = literal(TeamCommand.CONFIG.commandName);
@@ -81,7 +80,7 @@ public class CommandBuilder {
     }
 
     private static int executeCreate(ServerCommandSource source, String displayName, Formatting color) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         String name = displayName.toLowerCase();
         Scoreboard scoreboard = source.getServer().getScoreboard();
 
@@ -94,18 +93,18 @@ public class CommandBuilder {
             throw DUPLICATE_COLOR.create();
         }
         Team newTeam = scoreboard.addTeam(name);
-        newTeam.setDisplayName(new LiteralText(displayName));
+        newTeam.setDisplayName(Text.literal(displayName));
         scoreboard.addPlayerToTeam(player.getEntityName(), newTeam);
         newTeam.setColor(color);
         setPrefix(newTeam);
         setSuffix(newTeam);
-        source.sendFeedback(new TranslatableText("commands.team.add.success", newTeam.getFormattedName()), false);
+        source.sendFeedback(Text.translatable("commands.team.add.success", newTeam.getFormattedName()), false);
         return 1;
 
     }
 
     private static int executeSetDisplayName(ServerCommandSource source, String displayName) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Team team = (Team) player.getScoreboardTeam();
         Scoreboard scoreboard = source.getServer().getScoreboard();
 
@@ -117,17 +116,17 @@ public class CommandBuilder {
             throw DUPLICATE_NAME.create();
         }
 
-        team.setDisplayName(new LiteralText(displayName));
+        team.setDisplayName(Text.literal(displayName));
         setPrefix(team);
         setSuffix(team);
 
 
-        source.sendFeedback(new TranslatableText("commands.team.option.name.success", team.getFormattedName()), false);
+        source.sendFeedback(Text.translatable("commands.team.option.name.success", team.getFormattedName()), false);
         return 0;
     }
 
     private static int executeSetColor(ServerCommandSource source, Formatting color) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Team team = (Team) player.getScoreboardTeam();
         Scoreboard scoreboard = source.getServer().getScoreboard();
 
@@ -144,13 +143,13 @@ public class CommandBuilder {
         setPrefix(team);
         setSuffix(team);
 
-        source.sendFeedback(new TranslatableText("commands.team.option.color.success", team.getFormattedName(),
+        source.sendFeedback(Text.translatable("commands.team.option.color.success", team.getFormattedName(),
             color.getName()), false);
         return 0;
     }
 
     private static int executeSetFriendlyFire(ServerCommandSource source, boolean allowed) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Team team = (Team) player.getScoreboardTeam();
         if (team == null) {
             throw NOT_IN_TEAM.create();
@@ -159,13 +158,13 @@ public class CommandBuilder {
                 FRIENDLY_FIRE_ALREADY_DISABLED.create();
         }
         team.setFriendlyFireAllowed(allowed);
-        source.sendFeedback(new TranslatableText("commands.team.option.friendlyfire." + (allowed ? "enabled" :
+        source.sendFeedback(Text.translatable("commands.team.option.friendlyfire." + (allowed ? "enabled" :
             "disabled"), team.getFormattedName()), false);
         return 0;
     }
 
     private static int executeSetShowFriendlyInvisibles(ServerCommandSource source, boolean allowed) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Team team = (Team) player.getScoreboardTeam();
         if (team == null) {
             throw NOT_IN_TEAM.create();
@@ -174,13 +173,13 @@ public class CommandBuilder {
                 OPTION_SEE_FRIENDLY_INVISIBLES_ALREADY_DISABLED_EXCEPTION.create();
         }
         team.setShowFriendlyInvisibles(allowed);
-        source.sendFeedback(new TranslatableText("commands.team.option.seeFriendlyInvisibles." + (allowed ?
+        source.sendFeedback(Text.translatable("commands.team.option.seeFriendlyInvisibles." + (allowed ?
             "enabled" : "disabled"), team.getFormattedName()), false);
         return 0;
     }
 
     private static int executeInvitePlayer(ServerCommandSource source, ServerPlayerEntity newPlayer) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Team team = (Team) player.getScoreboardTeam();
         if (team == null) {
             throw NOT_IN_TEAM.create();
@@ -189,25 +188,25 @@ public class CommandBuilder {
         }
 
         TeamUtil.addInvite(newPlayer, team.getName());
-        TeamUtil.sendToTeammates(player, new TranslatableText("commands.teamcmd.teammates.invite",
+        TeamUtil.sendToTeammates(player, Text.translatable("commands.teamcmd.teammates.invite",
             player.getDisplayName(), newPlayer.getDisplayName()));
-        source.sendFeedback(new TranslatableText("commands.teamcmd.invite.success", newPlayer.getDisplayName()), false);
+        source.sendFeedback(Text.translatable("commands.teamcmd.invite.success", newPlayer.getDisplayName()), false);
 
         Text inviteText =
-            new TranslatableText("commands.teamcmd.invite", player.getDisplayName(), team.getFormattedName())
+            Text.translatable("commands.teamcmd.invite", player.getDisplayName(), team.getFormattedName())
                 .formatted(Formatting.GRAY)
                 .styled((style) -> style
                     .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/t accept"))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("/t accept")))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("/t accept")))
                     .withInsertion("/t accept"));
 
 
-        newPlayer.sendSystemMessage(inviteText, Util.NIL_UUID);
+        newPlayer.sendMessage(inviteText);
         return 0;
     }
 
     private static int executeAcceptInvite(ServerCommandSource source) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         String teamName = TeamUtil.getInvitedTeam(player);
 
         if (player.getScoreboardTeam() != null) {
@@ -222,36 +221,36 @@ public class CommandBuilder {
         }
 
         player.getScoreboard().addPlayerToTeam(player.getEntityName(), team);
-        source.sendFeedback(new TranslatableText("commands.teamcmd.joined", team.getFormattedName()), false);
+        source.sendFeedback(Text.translatable("commands.teamcmd.joined", team.getFormattedName()), false);
         TeamUtil.resetInvite(player);
 
-        TeamUtil.sendToTeammates(player, new TranslatableText("commands.teamcmd.teammates.joined",
+        TeamUtil.sendToTeammates(player, Text.translatable("commands.teamcmd.teammates.joined",
             player.getDisplayName()));
         return 1;
     }
 
     private static int executeLeave(ServerCommandSource source) throws CommandSyntaxException {
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Team team = (Team) player.getScoreboardTeam();
         if (team == null) {
             throw NOT_IN_TEAM.create();
         }
 
-        TeamUtil.sendToTeammates(player, new TranslatableText("commands.teamcmd.teammates.left",
+        TeamUtil.sendToTeammates(player, Text.translatable("commands.teamcmd.teammates.left",
             player.getDisplayName()));
         player.getScoreboard().clearPlayerTeam(player.getEntityName());
         if (team.getPlayerList().size() == 0) player.getScoreboard().removeTeam(team);
-        source.sendFeedback(new TranslatableText("commands.teamcmd.left", team.getFormattedName()), false);
+        source.sendFeedback(Text.translatable("commands.teamcmd.left", team.getFormattedName()), false);
         return 1;
     }
 
     private static int executeListMembers(ServerCommandSource source, Team team) {
         Collection<String> collection = team.getPlayerList();
         if (collection.isEmpty()) {
-            source.sendFeedback(new TranslatableText("commands.team.list.members.empty", team.getFormattedName()),
+            source.sendFeedback(Text.translatable("commands.team.list.members.empty", team.getFormattedName()),
                 false);
         } else {
-            source.sendFeedback(new TranslatableText("commands.team.list.members.success", team.getFormattedName(),
+            source.sendFeedback(Text.translatable("commands.team.list.members.success", team.getFormattedName(),
                 collection.size(), Texts.joinOrdered(collection)), false);
         }
         return collection.size();
@@ -260,9 +259,9 @@ public class CommandBuilder {
     private static int executeListTeams(ServerCommandSource source) {
         Collection<Team> collection = source.getServer().getScoreboard().getTeams();
         if (collection.isEmpty()) {
-            source.sendFeedback(new TranslatableText("commands.team.list.teams.empty"), false);
+            source.sendFeedback(Text.translatable("commands.team.list.teams.empty"), false);
         } else {
-            source.sendFeedback(new TranslatableText("commands.team.list.teams.success", collection.size(),
+            source.sendFeedback(Text.translatable("commands.team.list.teams.success", collection.size(),
                 Texts.join(collection, Team::getFormattedName)), false);
         }
         return collection.size();
@@ -285,14 +284,14 @@ public class CommandBuilder {
     private static void setPrefix(Team team) {
         Formatting teamColor = team.getColor();
         team.setPrefix(
-            new LiteralText(String.format(TeamCommand.CONFIG.prefixFormat, team.getDisplayName().getString()))
+            Text.literal(String.format(TeamCommand.CONFIG.prefixFormat, team.getDisplayName().getString()))
                 .formatted(TeamCommand.CONFIG.prefixUseTeamColor ? teamColor : getSecondaryColor(teamColor)));
     }
 
     private static void setSuffix(Team team) {
         Formatting teamColor = team.getColor();
         team.setSuffix(
-            new LiteralText(String.format(TeamCommand.CONFIG.suffixFormat, team.getDisplayName().getString()))
+            Text.literal(String.format(TeamCommand.CONFIG.suffixFormat, team.getDisplayName().getString()))
                 .formatted(TeamCommand.CONFIG.suffixUseTeamColor ? teamColor : getSecondaryColor(teamColor)));
     }
 
